@@ -1,8 +1,7 @@
-
 import 'package:flutter/material.dart';
 
 import 'package:lista_tarefas/pages/widgets/lista_tarefa_item.dart';
-
+import 'package:flutter_slidable/flutter_slidable.dart';
 import '../models/tarefa.dart';
 
 class PaginaLista extends StatefulWidget {
@@ -16,12 +15,20 @@ class _PaginaListaState extends State<PaginaLista> {
   final TextEditingController tarefacontroller = TextEditingController();
 
   List<Tarefa> listatarefas = [];
+  Tarefa? tarefadeletada;
+  int? postarefadeletada;
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
+        appBar:AppBar(
+          centerTitle: true,
+          title: Text('LISTA DE TAREFAS',),
+
+        ) ,
         body: Center(
+
           child: Padding(
             padding: const EdgeInsets.all(10),
             child: Column(
@@ -46,7 +53,6 @@ class _PaginaListaState extends State<PaginaLista> {
                       onPressed: addtarefa,
                       child: Icon(Icons.add, size: 30),
                       style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black,
                           padding: EdgeInsets.all(15)),
                     ),
                   ],
@@ -59,8 +65,50 @@ class _PaginaListaState extends State<PaginaLista> {
                     shrinkWrap: true,
                     children: [
                       for (Tarefa tarefa in listatarefas)
-                        ListaTarefaItem(
-                         itemtarefa: tarefa,
+                        Slidable(
+                          child: ListaTarefaItem(
+                            itemtarefa: tarefa,
+                          ),
+                          endActionPane: ActionPane(
+                            motion: DrawerMotion(),
+                            extentRatio: .25,
+                            children: [
+                              SlidableAction(
+                                onPressed: (context) {
+                                  setState(() {
+                                    tarefadeletada = tarefa;
+                                    postarefadeletada =
+                                        listatarefas.indexOf(tarefa);
+                                    listatarefas.remove(tarefa);
+                                  });
+                                  ScaffoldMessenger.of(context)
+                                      .clearSnackBars();
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'A tarefa ${tarefa.tittle} foi removida com sucesso',
+                                      ),
+                                      action: SnackBarAction(
+                                        label: 'Desfazer',
+                                        textColor: Color(0xff00d7f3),
+                                        onPressed: () {
+                                          setState(() {
+                                            listatarefas.insert(
+                                                postarefadeletada!,
+                                                tarefadeletada!);
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                  );
+                                },
+                                backgroundColor: Colors.red,
+                                icon: Icons.delete,
+                                spacing: 8,
+                                label: ('Deletar'),
+                              ),
+                            ],
+                          ),
                         ),
                     ],
                   ),
@@ -77,7 +125,7 @@ class _PaginaListaState extends State<PaginaLista> {
                     ),
                     Padding(padding: EdgeInsets.all(30)),
                     ElevatedButton(
-                      onPressed: () {},
+                      onPressed: confirmardelete,
                       style: ElevatedButton.styleFrom(
                         padding: EdgeInsets.all(15),
                       ),
@@ -103,5 +151,44 @@ class _PaginaListaState extends State<PaginaLista> {
       listatarefas.add(newTarefa);
     });
     tarefacontroller.clear();
+  }
+
+  void confirmardelete() {
+    showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text('LIMPAR TUDO'),
+            content:
+                Text('Você tem certeza que deseja apagar todas as tarefas?'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text(
+                  'Cancelar',
+                  style: TextStyle(
+                    color: Color(0xff00d7f3),
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+               setState(() {
+                 listatarefas.clear();
+               });
+                },
+                child: Text(
+                  'Limpar tudo',
+                  style: TextStyle(
+                    color: Colors.red,
+                  ),
+                ),
+              )
+            ],
+          );
+        });
   }
 }
